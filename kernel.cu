@@ -33,7 +33,7 @@ __global__ void mandelbrot_kernel(unsigned char* output, double center_x, double
         iter++;
     }
 
-    // Simplified coloring without smooth iteration
+    
     unsigned char r = (unsigned char)(iter * 1) % 256;
     unsigned char g = (unsigned char)(iter * 2) % 256;
     unsigned char b = (unsigned char)(iter * 4) % 256;
@@ -69,11 +69,11 @@ int main()
     dim3 grid((WIDTH + block.x - 1) / block.x, (HEIGHT + block.y - 1) / block.y);
 
     // Starting view parameters
-    double center_x = 0.0;  // Start from the center of the Mandelbrot set
-    double center_y = 0.0;  // Start from the center of the Mandelbrot set
-    double scale = 2.0;      // Large scale to show the entire Mandelbrot set
+    double center_x = 0.0;
+    double center_y = 0.0;
+    double scale = 2.0;
 
-    // The target coordinates to zoom into
+    
     double target_x = -0.10944534372538328;
     double target_y = -0.8948242213462949;
 
@@ -83,28 +83,21 @@ int main()
     for (int frame = 0; frame < TOTAL_FRAMES; ++frame)
     {
         printf("Rendering frame %d/%d...\n", frame + 1, TOTAL_FRAMES);
-
-        // Calculate the scale and pan (zoom) towards the target point
+        
         double zoom_factor = INITIAL_ZOOM_FACTOR;
 
-        // Gradually zoom in towards the target
-        center_x += (target_x - center_x) * zoom_factor; // Pan to target_x
-        center_y += (target_y - center_y) * zoom_factor; // Pan to target_y
-        scale *= zoom_factor; // Decrease the scale for zoom
+        center_x += (target_x - center_x) * zoom_factor;
+        center_y += (target_y - center_y) * zoom_factor;
+        scale *= zoom_factor;
 
-        // Precompute constants for real_min, real_max, imag_min, imag_max
         double real_min = center_x - scale;
         double real_max = center_x + scale;
         double imag_min = center_y - scale * HEIGHT / WIDTH;
         double imag_max = center_y + scale * HEIGHT / WIDTH;
 
-        // Launch kernel with the current zoom parameters
         mandelbrot_kernel << <grid, block >> > (d_output, center_x, center_y, scale, real_min, real_max, imag_min, imag_max);
-
-        // Copy the result from device to host
         cudaMemcpy(h_output, d_output, size, cudaMemcpyDeviceToHost);
 
-        // Save current frame to PPM file
         char filename[256];
         sprintf(filename, "C:\\users\\omere\\desktop\\img\\frame%04d.ppm", frame);
         save_ppm(filename, h_output);
